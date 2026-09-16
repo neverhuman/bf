@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$root"
+
+echo "== rustfmt =="
+cargo fmt --all -- --check
+
+echo "== clippy =="
+cargo clippy --locked --all-targets -- -D warnings
+
+echo "== cargo test =="
+cargo test --locked
+
+echo "== web =="
+npm --prefix web ci
+npm --prefix web run typecheck
+npm --prefix web test -- --run
+npm --prefix web run build
+
+echo "== demo basic =="
+cargo run --locked --bin bf -- demo --fixture basic
+
+echo "== demo interrupted_publish =="
+cargo run --locked --bin bf -- demo --fixture interrupted_publish
+
+echo "OK"

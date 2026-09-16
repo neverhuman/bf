@@ -1,0 +1,32 @@
+{
+  "schema_version": 3,
+  "spec": "tips/BULLETFARM_FINAL_ENGINEERING_SPEC.md (decision baseline 3.0)",
+  "source_tree": "/home/ubuntu/bullet/bf",
+  "completed": [
+    "BF3-001 gate fixture AT-032",
+    "BF3-002 v3 contracts and duplicate-key digest",
+    "BF3-003 sqlite command kernel",
+    "BF3-004 local principals and human-only commands",
+    "BF3-005 completion reserve",
+    "BF3-006 git contract activation on fixture repo",
+    "BF3-007 fake adapter and truncated-frame rejection",
+    "BF3-008 private workspace occupancy",
+    "BF3-009 one writer and all-or-none claim",
+    "BF3-011 independent check outliving sealed author",
+    "BF3-012 fake forge lost-reply reconcile",
+    "BF3-013 demo basic + interrupted_publish",
+    "thin BF3-018 one-page workbench"
+  ],
+  "next": "Live executor only after an operator grant. G2 is a later campaign.",
+  "checks": [
+    "scripts/check green locally: rustfmt, clippy -D warnings, cargo test --locked, web typecheck/test/build, both demos"
+  ],
+  "certified_capabilities": [
+    "fake_pr_ready_loop"
+  ],
+  "gaps": [
+    "No live provider certification.",
+    "Linux private directories are not a host-compromised OS sandbox.",
+    "Team fairness, second coding family, restore/export, native merge are out of this MVP."
+  ]
+}

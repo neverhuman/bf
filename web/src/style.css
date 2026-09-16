@@ -1,0 +1,41 @@
+:root {
+  color-scheme: dark;
+  --bg: #0c0d10;
+  --card: #17181d;
+  --ink: #f4f1e8;
+  --muted: #9aa0ad;
+  --line: #2c2e36;
+  --accent: #d6ff3f;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
+body { font: 16px/1.45 "Sora", ui-sans-serif, system-ui, sans-serif; }
+button, textarea { font: inherit; }
+main { max-width: 860px; margin: 0 auto; padding: 8vh 24px 12vh; }
+.kicker { color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; }
+h1 { font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: -0.04em; font-weight: 650; margin: 8px 0 20px; }
+textarea {
+  width: 100%; min-height: 110px; resize: vertical;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+}
+.row { display: flex; gap: 10px; margin: 14px 0 28px; flex-wrap: wrap; }
+button {
+  background: var(--accent); color: #111; border: 0; border-radius: 999px;
+  padding: 10px 18px; font-weight: 700; cursor: pointer;
+}
+button.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+.list { display: grid; gap: 10px; }
+.item {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px 16px; cursor: pointer;
+}
+.item h2 { margin: 0 0 6px; font-size: 16px; }
+.meta { color: var(--muted); font-size: 13px; }
+.drawer {
+  margin-top: 18px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 16px; padding: 16px;
+}
+pre { white-space: pre-wrap; font-size: 13px; color: var(--muted); }
+.ok { color: var(--accent); }
