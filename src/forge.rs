@@ -1,5 +1,9 @@
+use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PullRequest {
@@ -11,57 +15,83 @@ pub struct PullRequest {
     pub title: String,
     pub human_closed: bool,
 }
-
-#[derive(Debug, Clone)]
-pub enum CreateOutcome {
-    Confirmed(PullRequest),
-    Lost,
-}
-
-#[derive(Debug, Default)]
-pub struct FakeForge {
+#[derive(Default, Serialize, Deserialize)]
+struct State {
     next: u64,
-    pub lose_next: bool,
-    by_key: HashMap<String, PullRequest>,
+    by_key: BTreeMap<String, PullRequest>,
 }
-
+/// A separate durable remote authority. No remote state is reconstructed from hub receipts.
+pub struct FakeForge {
+    path: PathBuf,
+}
 impl FakeForge {
-    pub fn create(
-        &mut self,
-        logical_key: &str,
-        head: &str,
-        base: &str,
-        title: &str,
-    ) -> CreateOutcome {
-        if let Some(existing) = self.by_key.get(logical_key) {
-            return CreateOutcome::Confirmed(existing.clone());
-        }
-        self.next += 1;
-        let pr = PullRequest {
-            number: self.next,
-            url: format!("fake://pr/{}", self.next),
-            logical_key: logical_key.to_owned(),
-            head: head.to_owned(),
-            base: base.to_owned(),
-            title: title.to_owned(),
-            human_closed: false,
+    pub fn open(path: &Path) -> Result<Self> {
+        fs::create_dir_all(path)?;
+        Ok(Self {
+            path: path.to_owned(),
+        })
+    }
+    fn access<T>(&self, f: impl FnOnce(&mut State) -> Result<T>) -> Result<T> {
+        let lock = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(self.path.join("remote.lock"))?;
+        lock.lock()?;
+        let file = self.path.join("state.json");
+        let mut state = match fs::read(&file) {
+            Ok(bytes) => serde_json::from_slice(&bytes)?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => State::default(),
+            Err(e) => return Err(e.into()),
         };
-        self.by_key.insert(logical_key.to_owned(), pr.clone());
-        if self.lose_next {
-            self.lose_next = false;
-            CreateOutcome::Lost
-        } else {
-            CreateOutcome::Confirmed(pr)
-        }
+        let result = f(&mut state)?;
+        let temporary = self.path.join("state.pending");
+        let mut out = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&temporary)?;
+        out.write_all(&serde_json::to_vec(&state)?)?;
+        out.sync_all()?;
+        fs::rename(temporary, file)?;
+        std::fs::File::open(&self.path)?.sync_all()?;
+        Ok(result)
     }
-
-    pub fn find(&self, logical_key: &str) -> Option<&PullRequest> {
-        self.by_key.get(logical_key)
+    pub fn create(&self, key: &str, head: &str, base: &str, title: &str) -> Result<PullRequest> {
+        self.access(|s| {
+            if let Some(pr) = s.by_key.get(key) {
+                if pr.human_closed || pr.head != head || pr.base != base {
+                    return Err(Error::PolicyDenied(
+                        "remote PR closed or edited by a human; reconciliation decision required"
+                            .into(),
+                    ));
+                }
+                return Ok(pr.clone());
+            }
+            s.next += 1;
+            let pr = PullRequest {
+                number: s.next,
+                url: format!("fake://pr/{}", s.next),
+                logical_key: key.into(),
+                head: head.into(),
+                base: base.into(),
+                title: title.into(),
+                human_closed: false,
+            };
+            s.by_key.insert(key.into(), pr.clone());
+            Ok(pr)
+        })
     }
-
-    pub fn mark_human_closed(&mut self, logical_key: &str) {
-        if let Some(pr) = self.by_key.get_mut(logical_key) {
-            pr.human_closed = true;
-        }
+    pub fn find(&self, key: &str) -> Result<Option<PullRequest>> {
+        self.access(|s| Ok(s.by_key.get(key).cloned()))
+    }
+    pub fn mark_human_closed(&self, key: &str) -> Result<()> {
+        self.access(|s| {
+            if let Some(p) = s.by_key.get_mut(key) {
+                p.human_closed = true;
+            }
+            Ok(())
+        })
     }
 }

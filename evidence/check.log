@@ -1,0 +1,185 @@
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+
+added 143 packages, and audited 144 packages in 2s
+
+26 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> bf-web@0.1.0 typecheck
+> tsc --pretty false --noEmit
+
+
+> bf-web@0.1.0 test
+> vitest run --run
+
+
+ RUN  v3.2.7 /home/ubuntu/bullet/bf/web
+
+ ✓ src/App.test.tsx (1 test) 30ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  15:59:06
+   Duration  1.82s (transform 372ms, setup 0ms, collect 358ms, tests 30ms, environment 275ms, prepare 111ms)
+
+
+> bf-web@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 29 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.40 kB │ gzip:  0.26 kB
+dist/assets/index-sGcDuIyi.css    2.32 kB │ gzip:  1.00 kB
+dist/assets/index-CeRFq6EA.js   235.03 kB │ gzip: 73.48 kB
+✓ built in 1.05s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running unittests src/lib.rs (target/debug/deps/bf-191496ec76c8ace3)
+
+running 8 tests
+test domain::tests::overlap_is_segment_wise ... ok
+test domain::tests::path_rejects_dotdot ... ok
+test protocol::tests::shared_types_are_current ... ok
+test domain::tests::cycle_detect ... ok
+test qualification::tests::fixture_cannot_authorize_live ... ok
+test domain::tests::task_needs_checks ... ok
+test commands::replay_tests::replayed_stop_cannot_signal_successor ... ok
+test runner::tests::stop_observes_termination ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running unittests src/main.rs (target/debug/deps/bf-6d8783ffb49b2576)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/contracts.rs (target/debug/deps/contracts-93172b30ed47c965)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/acceptance.rs (target/debug/deps/acceptance-d971d544a6c078ea)
+
+running 12 tests
+test at012_truncated_frame ... ok
+test duplicate_json_keys_rejected ... ok
+test at002_cycle_rejected ... ok
+test at001_unknown_dependency_is_not_completion ... ok
+test at005_cf06_agent_cannot_take ... ok
+test body_owner_does_not_authenticate ... ok
+test hf17_agent_cannot_grant ... ok
+test at004_changed_body_conflicts ... ok
+test at003_command_replay_same_body ... ok
+test at032_gate_oracle ... ok
+test demo_basic_reaches_review_ready ... ok
+test demo_interrupted_publish_reconciles_once ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.08s
+
+     Running tests/hardening.rs (target/debug/deps/hardening-0d8aeb6cc95a6fa3)
+
+running 28 tests
+test http_denies_anonymous_and_cross_origin ... ok
+test private_bootstrap_single_hub_and_fixed_sqlite ... ok
+test concurrent_duplicate_submissions_activate_once ... ok
+test failed_storage_rolls_back_mission_event_and_operation ... ok
+test early_exit_and_forged_completion_cannot_pass ... ok
+test http_preserves_duplicate_keys_and_exact_raw_identity ... ok
+test slow_streams_have_a_lifetime_bound_and_control_remains_available ... ok
+test stop_before_dispatch_releases_holds_and_rejects_stale_control ... ok
+test rejected_planner_advances_owner_event_cursor ... ok
+test revoked_session_is_not_recovered_by_fallback ... ok
+test replay_rechecks_current_principal_and_membership ... ok
+test cross_owner_target_and_operations_are_denied ... ok
+test restart_keeps_unknown_occupancy_and_cost_reserved ... ok
+test expired_queue_entry_does_not_starve_later_planner ... ok
+test observer_cannot_activate_or_dispatch_task_repository ... ok
+test revoked_expired_exhausted_grants_refuse_before_job_intent ... ok
+test missing_artifact_blocks_publication_after_pass ... ok
+test repeated_demo_preserves_source_objects_and_artifacts ... ok
+test wrong_producer_and_stale_evidence_are_rejected ... ok
+test cancel_cannot_resume_or_publish ... ok
+test stopped_prepared_work_can_retry_within_cumulative_limits ... ok
+test remote_observation_survives_revocation_without_readiness ... ok
+test human_closed_remote_is_never_reopened ... ok
+test draft_edit_revision_and_single_acceptance ... ok
+test stopped_prepared_verifier_can_retry_and_preserves_candidate ... ok
+test two_fixture_missions_do_not_conflict ... ok
+test migration_preserves_old_records_and_does_not_enable_live ... ok
+test publication_recovers_each_durable_boundary_in_fresh_hub ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.42s
+
+   Doc-tests bf
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
+
+> bf-web@0.1.0 test:browser
+> playwright test
+
+
+Running 4 tests using 1 worker
+
+(node:3798334) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 browser/workbench.spec.ts:21:1 › browser goal, Unicode edit, exact approval, draft and returning conversation (4.0s)
+  ✓  2 browser/workbench.spec.ts:39:1 › anonymous and revoked sessions cannot read saved work (1.8s)
+  ✓  3 browser/workbench.spec.ts:46:1 › disconnect restores snapshot without another submission (1.7s)
+  ✓  4 browser/workbench.spec.ts:58:1 › narrow screen, multiline editing, visible focus and model-free pause (1.8s)
+
+  4 passed (10.3s)
+    Blocking waiting for file lock on package cache
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/bf --data-dir /tmp/tmp.vwLhllSP64 demo --fixture basic`
+{
+  "fixture": "basic",
+  "mission_id": "M-222d098a-dbfc-4125-ad00-a9a18dce3348",
+  "task_id": "T-222d098a-dbfc-4125-ad00-a9a18dce3348",
+  "candidate_id": "C-10dd9725-365c-4224-b9f6-b9b70eb1fb33",
+  "check_result": "pass",
+  "pr_number": 1,
+  "pr_url": "fake://pr/1",
+  "effect_state": "confirmed",
+  "author_authority": "sealed",
+  "occupancy": "stopped",
+  "phase": "review_ready",
+  "fake": true,
+  "limitations": [
+    "Deterministic fixture corpus only; no live provider, containment or independent live review qualification."
+  ]
+}
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/bf --data-dir /tmp/tmp.vwLhllSP64 demo --fixture interrupted_publish`
+{
+  "fixture": "interrupted_publish",
+  "mission_id": "M-5c311dea-38fb-4bbb-ba28-ae5a0189ccb8",
+  "task_id": "T-5c311dea-38fb-4bbb-ba28-ae5a0189ccb8",
+  "candidate_id": "C-73f926c8-19d6-4ec6-8f7c-9a7b6a7c0799",
+  "check_result": "pass",
+  "pr_number": 1,
+  "pr_url": "fake://pr/1",
+  "effect_state": "confirmed",
+  "author_authority": "sealed",
+  "occupancy": "stopped",
+  "phase": "review_ready",
+  "fake": true,
+  "limitations": [
+    "Deterministic fixture corpus only; no live provider, containment or independent live review qualification."
+  ]
+}

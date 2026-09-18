@@ -1,145 +1,245 @@
-use crate::hub::Hub;
-use axum::extract::{Path, State};
-use axum::http::{header, HeaderMap, StatusCode};
-use axum::response::{Html, IntoResponse, Response};
-use axum::routing::{get, post};
-use axum::{Json, Router};
+use crate::{Error, Hub, Result};
+use axum::{
+    body::{Body, Bytes},
+    extract::{DefaultBodyLimit, Path, Query, State},
+    http::{header, HeaderMap, StatusCode},
+    response::{
+        sse::{Event, KeepAlive, Sse},
+        IntoResponse, Response,
+    },
+    routing::{get, post},
+    Json, Router,
+};
+use serde::Deserialize;
 use serde_json::{json, Value};
-use std::path::PathBuf;
 use std::sync::Arc;
-use tower_http::services::ServeDir;
-
+use tokio::sync::Semaphore;
+include!(concat!(env!("OUT_DIR"), "/web_assets.rs"));
 #[derive(Clone)]
 pub struct AppState {
     pub hub: Arc<Hub>,
-    pub web_dir: PathBuf,
+    origin: String,
+    bootstrap: String,
+    slots: Arc<Semaphore>,
+    streams: Arc<Semaphore>,
 }
-
+impl AppState {
+    pub fn new(hub: Arc<Hub>, origin: String, bootstrap: String) -> Self {
+        Self {
+            hub,
+            origin,
+            bootstrap,
+            slots: Arc::new(Semaphore::new(32)),
+            streams: Arc::new(Semaphore::new(16)),
+        }
+    }
+}
 pub fn router(state: AppState) -> Router {
-    let static_files = ServeDir::new(&state.web_dir);
     Router::new()
-        .route("/health", get(health))
+        .route(
+            "/health",
+            get(|| async { Json(json!({"service":"bf","ok":true})) }),
+        )
+        .route("/v3/bootstrap", post(bootstrap))
+        .route("/v3/session", get(session).delete(logout))
         .route("/v3/doctor", get(doctor))
         .route("/v3/work", get(work))
+        .route("/v3/projects", get(projects))
+        .route("/v3/drafts", get(drafts))
+        .route("/v3/drafts/{id}", get(detail))
         .route("/v3/commands", post(commands))
         .route("/v3/operations/{id}", get(operation))
-        .route("/v3/demo/{fixture}", post(demo))
-        .route("/", get(index))
-        .fallback_service(static_files)
+        .route("/v3/events", get(events))
+        .fallback(get(asset))
+        .layer(DefaultBodyLimit::max(65536))
         .with_state(state)
 }
-
-async fn health() -> Json<Value> {
-    Json(json!({"ok": true}))
-}
-
-async fn doctor(State(state): State<AppState>) -> Json<Value> {
-    Json(state.hub.doctor())
-}
-
-async fn work(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, crate::Error> {
-    require_actor(&state, &headers)?;
-    let items = state.hub.work()?;
-    Ok(Json(json!({"items": items})))
-}
-
-async fn commands(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(body): Json<Value>,
-) -> Result<(StatusCode, Json<Value>), crate::Error> {
-    let actor = require_actor(&state, &headers)?;
-    let raw = serde_json::to_vec(&body)?;
-    let op = state.hub.command_bytes(&actor, &raw)?;
-    Ok((
-        StatusCode::ACCEPTED,
-        Json(json!({"operation_id": op.id, "status": op.status, "result": op.result})),
-    ))
-}
-
-async fn operation(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path(id): Path<String>,
-) -> Result<Json<Value>, crate::Error> {
-    require_actor(&state, &headers)?;
-    let items = state.hub.work()?;
-    Ok(Json(json!({"id": id, "work": items})))
-}
-
-async fn demo(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path(fixture): Path<String>,
-) -> Result<Json<Value>, crate::Error> {
-    require_actor(&state, &headers)?;
-    let receipt = state.hub.run_fixture(&fixture)?;
-    Ok(Json(serde_json::to_value(receipt)?))
-}
-
-async fn index(State(state): State<AppState>) -> Response {
-    let built = state.web_dir.join("index.html");
-    if let Ok(html) = std::fs::read_to_string(built) {
-        return Html(html).into_response();
+fn credential(state: &AppState, headers: &HeaderMap) -> Result<String> {
+    let host = headers
+        .get(header::HOST)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+    if state.origin != format!("http://{host}") {
+        return Err(Error::PolicyDenied("unexpected Host".into()));
     }
-    Html(FALLBACK_HTML).into_response()
-}
-
-fn require_actor(state: &AppState, headers: &HeaderMap) -> Result<String, crate::Error> {
-    let raw = headers
+    if let Some(origin) = headers.get(header::ORIGIN) {
+        if origin.to_str().ok() != Some(&state.origin) {
+            return Err(Error::PolicyDenied("cross-origin request denied".into()));
+        }
+    }
+    if headers
+        .get("sec-fetch-site")
+        .is_some_and(|h| h == "cross-site")
+    {
+        return Err(Error::PolicyDenied("cross-site request denied".into()));
+    }
+    headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    let token = raw.strip_prefix("Bearer ").unwrap_or(raw);
-    if token.is_empty() {
-        return Ok("owner-demo".into());
-    }
-    state.hub.lookup_session(token).or_else(|_| {
-        if token == state.hub.token {
-            Ok("owner-demo".into())
-        } else {
-            Err(crate::Error::AuthRequired)
-        }
-    })
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .filter(|v| !v.is_empty())
+        .map(str::to_owned)
+        .ok_or(Error::AuthRequired)
 }
-
-const FALLBACK_HTML: &str = r#"<!doctype html>
-<html lang="en">
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>BulletFarm</title>
-<style>
-  :root { color-scheme: dark; }
-  body { margin: 0; font: 16px/1.45 ui-sans-serif, system-ui; background: #0c0d10; color: #f4f1e8; }
-  main { max-width: 720px; margin: 12vh auto; padding: 0 24px; }
-  h1 { font-weight: 650; letter-spacing: -0.03em; }
-  textarea { width: 100%; min-height: 90px; background: #17181d; color: inherit; border: 1px solid #2c2e36; border-radius: 12px; padding: 14px; font: inherit; }
-  button { margin-top: 12px; background: #d6ff3f; color: #111; border: 0; border-radius: 999px; padding: 10px 18px; font-weight: 700; cursor: pointer; }
-  pre { background: #17181d; padding: 16px; border-radius: 12px; overflow: auto; }
-  .muted { color: #9aa0ad; }
-</style>
-<main>
-  <p class="muted">ask · inspect · steer · take over</p>
-  <h1>What should happen?</h1>
-  <textarea id="goal" placeholder="Reject repeated delivery IDs"></textarea>
-  <div>
-    <button id="run">Run demo</button>
-    <button id="work" style="background:#2c2e36;color:#f4f1e8">Show work</button>
-  </div>
-  <pre id="out" class="muted">Status needs no model.</pre>
-</main>
-<script>
-const out = document.getElementById('out');
-document.getElementById('run').onclick = async () => {
-  const r = await fetch('/v3/demo/basic', {method:'POST', headers:{'Content-Type':'application/json'}});
-  out.textContent = await r.text();
-};
-document.getElementById('work').onclick = async () => {
-  const r = await fetch('/v3/work');
-  out.textContent = await r.text();
-};
-</script>
-</html>"#;
+async fn call<T: Send + 'static>(
+    state: AppState,
+    headers: HeaderMap,
+    f: impl FnOnce(&Hub, &str) -> Result<T> + Send + 'static,
+) -> Result<T> {
+    let token = credential(&state, &headers)?;
+    let permit = state.slots.clone().try_acquire_owned().map_err(|_| {
+        Error::ResourceConflict("request queue full; retry with the same command ID".into())
+    })?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        let actor = state.hub.lookup_session(&token)?;
+        f(&state.hub, &actor)
+    })
+    .await
+    .map_err(|_| Error::StorageUnavailable("request worker stopped".into()))?
+}
+async fn bootstrap(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    let token = credential(&s, &h)?;
+    if crate::digest::sha256_hex(token.as_bytes())
+        != crate::digest::sha256_hex(s.bootstrap.as_bytes())
+    {
+        return Err(Error::AuthRequired);
+    }
+    let permit = s
+        .slots
+        .clone()
+        .try_acquire_owned()
+        .map_err(|_| Error::ResourceConflict("request queue full".into()))?;
+    let token = tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        s.hub.ensure_session("owner-demo")
+    })
+    .await
+    .map_err(|_| Error::StorageUnavailable("session worker stopped".into()))??;
+    Ok(Json(json!({"token":token})))
+}
+async fn session(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    call(s, h, |_, actor| Ok(Json(json!({"actor_id":actor})))).await
+}
+async fn logout(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    let token = credential(&s, &h)?;
+    call(s, h, move |hub, _| {
+        hub.revoke_session(&token)?;
+        Ok(Json(json!({"revoked":true})))
+    })
+    .await
+}
+async fn doctor(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    call(s, h, |hub, _| Ok(Json(hub.doctor()))).await
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Page {
+    before: Option<i64>,
+    limit: Option<usize>,
+}
+async fn work(
+    State(s): State<AppState>,
+    h: HeaderMap,
+    Query(p): Query<Page>,
+) -> Result<Json<Value>> {
+    call(s, h, move |hub, actor| {
+        let items = hub.work_for(actor, p.before, p.limit.unwrap_or(50))?;
+        Ok(Json(
+            json!({"next_cursor":items.last().map(|i|i.cursor),"items":items}),
+        ))
+    })
+    .await
+}
+async fn projects(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    call(s, h, |hub, actor| Ok(Json(hub.projects(actor)?))).await
+}
+async fn drafts(State(s): State<AppState>, h: HeaderMap) -> Result<Json<Value>> {
+    call(s, h, |hub, actor| Ok(Json(hub.drafts(actor)?))).await
+}
+async fn detail(
+    State(s): State<AppState>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+) -> Result<Json<Value>> {
+    call(s, h, move |hub, actor| Ok(Json(hub.detail(actor, &id)?))).await
+}
+async fn operation(
+    State(s): State<AppState>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+) -> Result<Json<Value>> {
+    call(s, h, move |hub, actor| {
+        Ok(Json(serde_json::to_value(hub.operation(actor, &id)?)?))
+    })
+    .await
+}
+async fn commands(
+    State(s): State<AppState>,
+    h: HeaderMap,
+    body: Bytes,
+) -> Result<(StatusCode, Json<Value>)> {
+    if h.get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.split(';').next())
+        != Some("application/json")
+    {
+        return Err(Error::InvalidContract(
+            "Content-Type must be application/json".into(),
+        ));
+    }
+    // The original bytes reach the strict decoder unchanged; session is rechecked in the command transaction.
+    let token = credential(&s, &h)?;
+    call(s, h, move |hub, _| {
+        Ok((
+            StatusCode::ACCEPTED,
+            Json(serde_json::to_value(hub.command_session(&token, &body)?)?),
+        ))
+    })
+    .await
+}
+async fn events(State(s): State<AppState>, h: HeaderMap) -> Result<Response> {
+    call(s.clone(), h.clone(), |_, _| Ok(())).await?;
+    let permit = s
+        .streams
+        .clone()
+        .try_acquire_owned()
+        .map_err(|_| Error::ResourceConflict("event stream limit reached".into()))?;
+    let stream = async_stream::stream! {
+        let _permit=permit;
+        let mut interval=tokio::time::interval(std::time::Duration::from_secs(1));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            let snapshot=call(s.clone(),h.clone(),|hub,actor|Ok(json!({"cursor":hub.change_cursor(actor)?}))).await;
+            match snapshot {
+                Ok(value)=>yield Ok::<_,std::convert::Infallible>(Event::default().event("snapshot").data(value.to_string())),
+                Err(error)=>{yield Ok(Event::default().event("disconnected").data(error.code()));break;}
+            }
+        }
+    };
+    // Pull-based latest snapshots: each slow client holds at most one bounded page, no event queue.
+    Ok(Sse::new(stream)
+        .keep_alive(KeepAlive::default())
+        .into_response())
+}
+async fn asset(uri: axum::http::Uri) -> Response {
+    let name = if uri.path() == "/" {
+        "index.html"
+    } else {
+        uri.path().trim_start_matches('/')
+    };
+    let Some((_, bytes)) = WEB_ASSETS.iter().find(|(key, _)| *key == name) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let mime = if name.ends_with(".html") {
+        "text/html; charset=utf-8"
+    } else if name.ends_with(".js") {
+        "text/javascript; charset=utf-8"
+    } else if name.ends_with(".css") {
+        "text/css; charset=utf-8"
+    } else {
+        "application/octet-stream"
+    };
+    Response::builder().header(header::CONTENT_TYPE,mime).header("Referrer-Policy","no-referrer").header("X-Content-Type-Options","nosniff").header("Content-Security-Policy","default-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'").header("Cache-Control","no-store").body(Body::from(*bytes)).unwrap()
+}

@@ -1,27 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$root"
-
-echo "== rustfmt =="
-cargo fmt --all -- --check
-
-echo "== clippy =="
-cargo clippy --locked --all-targets -- -D warnings
-
-echo "== cargo test =="
-cargo test --locked
-
-echo "== web =="
-npm --prefix web ci
+cd "$(dirname "$0")/.."
+npm --prefix web ci --ignore-scripts
 npm --prefix web run typecheck
 npm --prefix web test -- --run
-npm --prefix web run build
-
-echo "== demo basic =="
-cargo run --locked --bin bf -- demo --fixture basic
-
-echo "== demo interrupted_publish =="
-cargo run --locked --bin bf -- demo --fixture interrupted_publish
-
-echo "OK"
+bash scripts/build-web --check
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
+cargo build --locked --bin bf
+# Browser dependencies are for development/CI only. The installed bf binary embeds its UI.
+(cd web && npx playwright install chromium && npm run test:browser)
+proof_dir="$(mktemp -d)"
+trap 'rm -rf "$proof_dir"' EXIT
+cargo run --locked --bin bf -- --data-dir "$proof_dir" demo --fixture basic
+cargo run --locked --bin bf -- --data-dir "$proof_dir" demo --fixture interrupted_publish

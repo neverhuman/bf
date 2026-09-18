@@ -1,32 +1,610 @@
 {
   "schema_version": 3,
-  "spec": "tips/BULLETFARM_FINAL_ENGINEERING_SPEC.md (decision baseline 3.0)",
-  "source_tree": "/home/ubuntu/bullet/bf",
-  "completed": [
-    "BF3-001 gate fixture AT-032",
-    "BF3-002 v3 contracts and duplicate-key digest",
-    "BF3-003 sqlite command kernel",
-    "BF3-004 local principals and human-only commands",
-    "BF3-005 completion reserve",
-    "BF3-006 git contract activation on fixture repo",
-    "BF3-007 fake adapter and truncated-frame rejection",
-    "BF3-008 private workspace occupancy",
-    "BF3-009 one writer and all-or-none claim",
-    "BF3-011 independent check outliving sealed author",
-    "BF3-012 fake forge lost-reply reconcile",
-    "BF3-013 demo basic + interrupted_publish",
-    "thin BF3-018 one-page workbench"
+  "spec": {
+    "path": "../tips/BULLETFARM_FINAL_ENGINEERING_SPEC.md",
+    "baseline": "3.0",
+    "sha256": "1d8064b40041e9383b66b790eb8eaa41924657db5f5d1bb0a5373fc5c501b9eb",
+    "provenance_only": "../tips/BULLETFARM_FINAL_ENGINEERING_SPEC(1).md"
+  },
+  "source": {
+    "base_commit": "6923946",
+    "checkout": "/home/ubuntu/bullet/bf",
+    "working_tree": "uncommitted implementation; source inventory in evidence/source-manifest.json"
+  },
+  "first_release_gate": {
+    "passed": false,
+    "required": "One real browser task reaches an independently checked draft PR, including interruption and recovery",
+    "observed": "Fixture browser pipeline and fake draft only. No live model execution or real publication."
+  },
+  "implemented_fragments": [
+    {
+      "ids": [
+        "BF3-002-AC01",
+        "BF3-002-AC03",
+        "AT-003",
+        "AT-004"
+      ],
+      "behavior": "Strict raw command bytes, duplicate-key rejection, generated Rust/TypeScript wire types, semantic validation and revision/idempotency checks"
+    },
+    {
+      "ids": [
+        "BF3-003-AC01",
+        "BF3-003-AC02",
+        "BF3-003-AC03"
+      ],
+      "behavior": "Append-only migrations, bounded dedicated database worker, singleton lock, transactional jobs/budgets/events/launch and effect intents; immutable future evidence bindings"
+    },
+    {
+      "ids": [
+        "BF3-004-AC02",
+        "BF3-004-AC03",
+        "AT-005",
+        "AT-006"
+      ],
+      "behavior": "Private loopback bootstrap, hashed expiring revocable sessions, Host/Origin controls, current scoped reads/replays and repository write checks"
+    },
+    {
+      "ids": [
+        "BF3-005-AC01",
+        "BF3-005-AC02",
+        "BF3-009-AC01",
+        "BF3-009-AC02",
+        "AT-018",
+        "CF05"
+      ],
+      "behavior": "Fixture grant/deadline/allowance checks, retained reservations, cumulative bounded retries, protected completion allocation, separate writer and physical state"
+    },
+    {
+      "ids": [
+        "BF3-011-AC01",
+        "AT-030",
+        "AT-032",
+        "AT-033"
+      ],
+      "behavior": "Complete fixture diff/mode check, immutable Git bundle and digest, protected fixture test inventory/assertions/completion; arbitrary candidate execution refuses before spawn"
+    },
+    {
+      "ids": [
+        "BF3-012-AC01",
+        "BF3-012-AC02",
+        "AT-035",
+        "AT-036"
+      ],
+      "behavior": "Persistent fake forge, exact stable publication intent before dispatch, five fault boundaries, authoritative readback, human closure protection and artifact revalidation"
+    },
+    {
+      "ids": [
+        "BF3-017-AC01",
+        "BF3-018-AC01",
+        "AT-025"
+      ],
+      "behavior": "Durable owner-bound goals/conversations/revisioned fixture plans, one acceptance, current jobs, model-free pause/stop/cancel/retry, embedded React UI, compact bounded SSE and cursor work projection"
+    }
   ],
-  "next": "Live executor only after an operator grant. G2 is a later campaign.",
-  "checks": [
-    "scripts/check green locally: rustfmt, clippy -D warnings, cargo test --locked, web typecheck/test/build, both demos"
+  "fixture_evidence": {
+    "rust": {
+      "passed": 48,
+      "failed": 0,
+      "log": "evidence/check.log",
+      "command": "bash scripts/check"
+    },
+    "browser": {
+      "chromium_journeys_passed": 4,
+      "unit_tests_passed": 1,
+      "typecheck": "passed",
+      "bundle_freshness": "passed",
+      "log": "evidence/check.log"
+    },
+    "tooling": {
+      "format": "passed",
+      "clippy_warnings_denied": "passed",
+      "locked_release_build": "passed",
+      "release_log": "evidence/release-build.log"
+    },
+    "demos": {
+      "basic": "passed",
+      "interrupted_publish": "passed",
+      "kind": "simulated draft PR only"
+    },
+    "performance": {
+      "path": "evidence/performance.json",
+      "workload": "bf-http-10000-v2-painted-editor",
+      "passed": true,
+      "status_p95_ms": 2.505942014977336,
+      "small_command_p95_ms": 15.180278976913542,
+      "editor_p95_ms": 15.199999988079071,
+      "idle_rss_mib": 9.94140625,
+      "limits": "Fixture HTTP workload with four simulated status clients; visible-editor input to next frame, not live runner performance or OS-level input latency. Initial page readiness measured separately. Two failed pre-paint runs retained."
+    },
+    "independent_review": {
+      "path": "evidence/independent-review.md",
+      "hardening_tests_passed": 28,
+      "remaining_findings_in_final_correction_scope": 0,
+      "scope": "local fixture corrections only; final frontend/performance outside targeted reviewer retest"
+    }
+  },
+  "live_qualification": {
+    "qualified": false,
+    "operating_hold": "preserved",
+    "provider": "Codex subscription only, installed CLI 0.154.0 inspected; no model invocation",
+    "containment": "bwrap namespace probe refused in this environment; no waiver",
+    "grants": "no live grant created or changed",
+    "keys_enrollment_operator_decisions": "not modified",
+    "actual_pr": null
+  },
+  "unimplemented_requirements": [
+    "Real bounded Codex planner/executor transport and fresh provider session qualification; probes are not transport certification.",
+    "Certified disposable Linux isolation of arbitrary candidate code, filesystem/credentials/descriptors/network/descendants/resources; fixture process supervision is not this boundary.",
+    "Live independent checks/reviewer and required CI stage integration; trusted fixture corpus verification is not a general verifier.",
+    "Real GitHub publication, expected-remote branch updates, PR-required CI and live interruption/recovery campaign.",
+    "General multi-task Git activation/dependency graph, interface reservations and live budget/account hierarchies; current fixture graph is one independent task.",
+    "Operator reconciliation of unknown external process occupancy; current controller preserves unknown state and refuses unsafe retry.",
+    "Guided live account connection/refresh and full first-launch enrollment; current read-only status distinguishes installation/authentication/expiry/qualification.",
+    "Remaining G2/G3 capabilities and full TUI as preserved below."
   ],
-  "certified_capabilities": [
-    "fake_pr_ready_loop"
+  "packages": [
+    {
+      "id": "BF3-001",
+      "title": "Inspect existing code and gate adequacy",
+      "acceptance_ids": [
+        "BF3-001-AC01",
+        "BF3-001-AC02",
+        "BF3-001-AC03"
+      ],
+      "scenario_ids": [
+        "AT-032"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-002",
+      "title": "Define v3 contracts, profiles and pure validators",
+      "acceptance_ids": [
+        "BF3-002-AC01",
+        "BF3-002-AC02",
+        "BF3-002-AC03"
+      ],
+      "scenario_ids": [
+        "AT-001",
+        "AT-002",
+        "HF01"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-003",
+      "title": "Persist state, jobs, commands and effect identity",
+      "acceptance_ids": [
+        "BF3-003-AC01",
+        "BF3-003-AC02",
+        "BF3-003-AC03"
+      ],
+      "scenario_ids": [
+        "AT-003",
+        "AT-004",
+        "HF16"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-004",
+      "title": "Authenticate principals and expose the minimal CLI",
+      "acceptance_ids": [
+        "BF3-004-AC01",
+        "BF3-004-AC02",
+        "BF3-004-AC03"
+      ],
+      "scenario_ids": [
+        "AT-005",
+        "AT-006",
+        "CF06",
+        "HF17"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-005",
+      "title": "Reserve execution and completion budgets",
+      "acceptance_ids": [
+        "BF3-005-AC01",
+        "BF3-005-AC02",
+        "BF3-005-AC03"
+      ],
+      "scenario_ids": [
+        "AT-007",
+        "AT-008",
+        "AT-009",
+        "CF05"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-006",
+      "title": "Publish and activate Git contracts with dependency validity",
+      "acceptance_ids": [
+        "BF3-006-AC01",
+        "BF3-006-AC02",
+        "BF3-006-AC03"
+      ],
+      "scenario_ids": [
+        "AT-010",
+        "AT-011"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-007",
+      "title": "Build the adapter seam and deterministic fakes",
+      "acceptance_ids": [
+        "BF3-007-AC01",
+        "BF3-007-AC02",
+        "BF3-007-AC03"
+      ],
+      "scenario_ids": [
+        "AT-012"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-008",
+      "title": "Isolate workspaces and track physical execution",
+      "acceptance_ids": [
+        "BF3-008-AC01",
+        "BF3-008-AC02",
+        "BF3-008-AC03"
+      ],
+      "scenario_ids": [
+        "AT-013",
+        "AT-014",
+        "CF01",
+        "HF06",
+        "HF09"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-009",
+      "title": "Implement transactional claims and all-job recovery",
+      "acceptance_ids": [
+        "BF3-009-AC01",
+        "BF3-009-AC02",
+        "BF3-009-AC03"
+      ],
+      "scenario_ids": [
+        "AT-016",
+        "AT-017",
+        "AT-018",
+        "AT-019",
+        "AT-020",
+        "AT-022",
+        "CF03",
+        "HF07",
+        "HF08"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-010",
+      "title": "Certify one incumbent executor and the clean-room fallback",
+      "acceptance_ids": [
+        "BF3-010-AC01",
+        "BF3-010-AC02",
+        "BF3-010-AC03"
+      ],
+      "scenario_ids": [
+        "AT-026",
+        "HF02",
+        "HF03",
+        "HF04",
+        "HF05"
+      ],
+      "status": "blocked_unqualified_live_transport_and_containment"
+    },
+    {
+      "id": "BF3-011",
+      "title": "Seal candidates and run stage-specific independent checks",
+      "acceptance_ids": [
+        "BF3-011-AC01",
+        "BF3-011-AC02",
+        "BF3-011-AC03"
+      ],
+      "scenario_ids": [
+        "AT-021",
+        "AT-030",
+        "AT-031",
+        "AT-033",
+        "AT-034",
+        "AT-044",
+        "CF02",
+        "HF11"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-012",
+      "title": "Publish and reconcile a stable draft PR",
+      "acceptance_ids": [
+        "BF3-012-AC01",
+        "BF3-012-AC02",
+        "BF3-012-AC03"
+      ],
+      "scenario_ids": [
+        "AT-015",
+        "AT-023",
+        "AT-024",
+        "AT-035",
+        "AT-036",
+        "AT-037"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-013",
+      "title": "Demonstrate the first useful developer loop",
+      "acceptance_ids": [
+        "BF3-013-AC01",
+        "BF3-013-AC02",
+        "BF3-013-AC03"
+      ],
+      "scenario_ids": [],
+      "status": "not_passed_real_browser_task_required"
+    },
+    {
+      "id": "BF3-014",
+      "title": "Add owner lanes, fairness and external-work awareness",
+      "acceptance_ids": [
+        "BF3-014-AC01",
+        "BF3-014-AC02",
+        "BF3-014-AC03"
+      ],
+      "scenario_ids": [
+        "AT-040"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-015",
+      "title": "Implement human takeover, return and respecification",
+      "acceptance_ids": [
+        "BF3-015-AC01",
+        "BF3-015-AC02",
+        "BF3-015-AC03"
+      ],
+      "scenario_ids": [
+        "AT-038",
+        "AT-039"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-016",
+      "title": "Certify a second coding-provider family",
+      "acceptance_ids": [
+        "BF3-016-AC01",
+        "BF3-016-AC02",
+        "BF3-016-AC03"
+      ],
+      "scenario_ids": [
+        "AT-027"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-017",
+      "title": "Build Foreman planning and scoped context",
+      "acceptance_ids": [
+        "BF3-017-AC01",
+        "BF3-017-AC02",
+        "BF3-017-AC03"
+      ],
+      "scenario_ids": [
+        "AT-025",
+        "HF12"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-018",
+      "title": "Ship the single React workbench and shared API",
+      "acceptance_ids": [
+        "BF3-018-AC01",
+        "BF3-018-AC02",
+        "BF3-018-AC03"
+      ],
+      "scenario_ids": [
+        "HF19"
+      ],
+      "status": "partial_fixture_implementation"
+    },
+    {
+      "id": "BF3-019",
+      "title": "Certify native integration and assembled outcomes",
+      "acceptance_ids": [
+        "BF3-019-AC01",
+        "BF3-019-AC02",
+        "BF3-019-AC03"
+      ],
+      "scenario_ids": [
+        "AT-041",
+        "AT-042",
+        "CF04"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-020",
+      "title": "Report complete cost, windows and calibrated routes",
+      "acceptance_ids": [
+        "BF3-020-AC01",
+        "BF3-020-AC02",
+        "BF3-020-AC03"
+      ],
+      "scenario_ids": [
+        "AT-028",
+        "AT-029",
+        "AT-043",
+        "AT-047",
+        "CF08",
+        "HF10"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-021",
+      "title": "Rehearse restore, retention, migration and export",
+      "acceptance_ids": [
+        "BF3-021-AC01",
+        "BF3-021-AC02",
+        "BF3-021-AC03"
+      ],
+      "scenario_ids": [
+        "AT-045",
+        "AT-046",
+        "CF07",
+        "HF20"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-022",
+      "title": "Run team release, fault and independent rebuild gates",
+      "acceptance_ids": [
+        "BF3-022-AC01",
+        "BF3-022-AC02",
+        "BF3-022-AC03"
+      ],
+      "scenario_ids": [
+        "AT-052"
+      ],
+      "status": "deferred_G2"
+    },
+    {
+      "id": "BF3-023",
+      "title": "Controlled shadow evaluations and shared profile promotion",
+      "acceptance_ids": [
+        "BF3-023-AC01",
+        "BF3-023-AC02",
+        "BF3-023-AC03"
+      ],
+      "scenario_ids": [
+        "AT-048",
+        "AT-049",
+        "HF13",
+        "HF14",
+        "HF18"
+      ],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-024",
+      "title": "Add the Grok Build executor",
+      "acceptance_ids": [
+        "BF3-024-AC01",
+        "BF3-024-AC02",
+        "BF3-024-AC03"
+      ],
+      "scenario_ids": [],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-025",
+      "title": "Connect one existing production pipeline",
+      "acceptance_ids": [
+        "BF3-025-AC01",
+        "BF3-025-AC02",
+        "BF3-025-AC03"
+      ],
+      "scenario_ids": [
+        "AT-050"
+      ],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-026",
+      "title": "Add signed Slack thin-client commands",
+      "acceptance_ids": [
+        "BF3-026-AC01",
+        "BF3-026-AC02",
+        "BF3-026-AC03"
+      ],
+      "scenario_ids": [
+        "AT-051"
+      ],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-027",
+      "title": "Validate Grok Bot and SMS client capabilities",
+      "acceptance_ids": [
+        "BF3-027-AC01",
+        "BF3-027-AC02",
+        "BF3-027-AC03"
+      ],
+      "scenario_ids": [],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-028",
+      "title": "Evaluate the OpenJarvis engine/core boundary",
+      "acceptance_ids": [
+        "BF3-028-AC01",
+        "BF3-028-AC02",
+        "BF3-028-AC03"
+      ],
+      "scenario_ids": [
+        "HF15"
+      ],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-029",
+      "title": "Test architectural replacement or federation need",
+      "acceptance_ids": [
+        "BF3-029-AC01",
+        "BF3-029-AC02",
+        "BF3-029-AC03"
+      ],
+      "scenario_ids": [],
+      "status": "deferred_G3"
+    },
+    {
+      "id": "BF3-030",
+      "title": "Implement one justified forge-native improvement",
+      "acceptance_ids": [
+        "BF3-030-AC01",
+        "BF3-030-AC02",
+        "BF3-030-AC03"
+      ],
+      "scenario_ids": [],
+      "status": "deferred_G3"
+    }
   ],
-  "gaps": [
-    "No live provider certification.",
-    "Linux private directories are not a host-compromised OS sandbox.",
-    "Team fairness, second coding family, restore/export, native merge are out of this MVP."
-  ]
+  "destinations": {
+    "G2": [
+      "two owners/runners/provider families",
+      "Claude qualification",
+      "fair scheduling",
+      "human takeover/return/respecification",
+      "scoped memory",
+      "bounded planning modes",
+      "protected integration",
+      "assembled acceptance",
+      "complete accounting",
+      "backup/restore/export",
+      "independent rebuild"
+    ],
+    "later_interface": [
+      "full TUI using same commands and projections after browser delivery works"
+    ],
+    "G3": [
+      "Prime qualification",
+      "controlled learning",
+      "local inference",
+      "additional providers",
+      "production delivery",
+      "Slack/Bot/SMS",
+      "justified forge improvements"
+    ]
+  },
+  "next": "Implement and qualify the remaining live Codex transport, disposable isolation, general task activation, independent verification and real publication. The first-release gate remains false. No live invocation or publication may proceed through existing HOLD or missing current live authority."
 }

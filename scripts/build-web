@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+npm --prefix web run build
+python3 - "$@" <<'PYTHON'
+import sys, shutil
+from pathlib import Path
+source, target = Path('web/dist'), Path('web/bundle')
+expected={str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()}
+actual={str(p.relative_to(target)):p.read_bytes() for p in target.rglob('*') if p.is_file()}
+if '--check' in sys.argv:
+    if expected != actual: raise SystemExit('Bundled workbench is stale. Run bash scripts/build-web and commit web/bundle.')
+else:
+    board=Path('../AGENT_CHAT.md')
+    def log(message):
+        if board.exists():
+            board.read_text()
+            with board.open('a') as f: f.write('\n- bf-build-web — '+message+'\n')
+    for name in actual.keys()-expected.keys():
+        log('CLAIM/EDIT bf/web/bundle/'+name+'; remove superseded generated bundle input')
+        (target/name).unlink()
+        log('RELEASE bf/web/bundle/'+name)
+    for name,data in expected.items():
+        if actual.get(name)==data: continue
+        log('CLAIM/EDIT bf/web/bundle/'+name+'; generated from current source')
+        path=target/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+        log('RELEASE bf/web/bundle/'+name)
+PYTHON
