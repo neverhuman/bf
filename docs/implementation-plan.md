@@ -4,6 +4,28 @@ User-approved implementation direction, 2026-09-18. This repository plan superse
 `~/.claude/plans/please-study-the-tips-snazzy-canyon.md` and its dashboard/pruning direction.
 Source of intent: the implementation plan supplied by the user, not agent-created authority.
 
+### Current user instruction supersedes the earlier TUI-first decision
+
+The implementing Codex session received the following direct user instruction on 2026-09-18,
+after the earlier TUI-first campaign. These are quotations from that message and its supplied plan:
+
+> A previous agent produced the plan below to accomplish the user's task. Implement the plan in a fresh context. Treat the plan as the source of user intent, re-read files as needed, and carry the work through implementation and verification.
+
+> **Primary interface:** browser workbench; bare `bf` opens or reconnects to it.
+
+> **Existing TUI:** preserve as an optional client of the same API.
+
+> This plan supersedes the direction that reduces the MVP to a session dashboard and deletes the delivery core.
+
+> Recover conforming components from `9f03362` through selective integration, preserving subsequent discovery, coordination, TUI and CI improvements.
+
+> Move CLI and TUI mutations to the authenticated hub API. They must not open a second writable authority.
+
+These explicit directions replace the earlier private plan's TUI-first/read-only-browser and pruning
+decisions. Reviewers should assess this implementation against the current request. This does not
+change the HOLD or confer live grants. Stage 0 changes documentation only; controller restoration and
+coordination migration remain subsequent, serialized implementation PRs with their own checks/reviews.
+
 ## 1. Audit and decisions
 
 Restore the tested delivery controller, retain discovery/coordination, and finish one real browser-to-PR
@@ -18,7 +40,8 @@ The `(1)` document is provenance; its architecture/backlog numbering must not be
 absent. Recover available artifacts from history and derive missing traceability from the canonical
 document. Never report the absent validator as executed.
 
-Audit baseline: main `6e8d0bf`, inspected September 18, 2026. Earlier controller: `9f03362`.
+Original supplied audit baseline: main `6e8d0bf`, inspected September 18, 2026. Current Stage 0
+implementation base: main `0cc243a`, including PR #11's transcript/PR views. Earlier controller: `9f03362`.
 
 | Observed state | Consequence |
 |---|---|
