@@ -105,6 +105,11 @@ fn bare_bf_without_a_tty_prints_the_plain_snapshot() {
         .args(["--data-dir", dir.path().to_str().unwrap()])
         .output()
         .unwrap();
-    assert_eq!(out.status.code(), Some(3));
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     assert!(String::from_utf8_lossy(&out.stdout).contains("AGENTS (0)"));
 }
