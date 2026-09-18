@@ -10,6 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 thread_local! {static CANCEL:RefCell<Option<Arc<AtomicBool>>>=const {RefCell::new(None)};}
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn context(flag: Option<Arc<AtomicBool>>) {
     CANCEL.with(|c| *c.borrow_mut() = flag);
 }
