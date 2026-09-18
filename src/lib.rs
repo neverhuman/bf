@@ -7,8 +7,9 @@ pub mod error;
 pub mod gitutil;
 pub mod hub;
 pub mod identity;
+pub mod live;
 pub mod prs;
-mod runner;
+pub mod runner;
 mod storage;
 pub mod tui;
 

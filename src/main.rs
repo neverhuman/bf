@@ -160,7 +160,7 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
 fn dispatch(cli: Cli) -> Result<()> {
     let dir = directory(&cli);
     match cli.command {
-        None => bf::tui::run(Box::new(bf::tui::LiveSource::new(dir))),
+        None => bf::tui::run(Box::new(bf::live::LiveSource::from_env())),
         Some(Command::Agents) => {
             let agents = bf::agents::discover(&bf::agents::Env::from_env())?;
             print!("{}", bf::agents::plain_table(&agents));
@@ -242,8 +242,14 @@ fn dispatch(cli: Cli) -> Result<()> {
             );
             Ok(())
         }
-        Some(Command::Stop { pid: _ }) => {
-            Err(Error::Other("not implemented yet (plan PR 7: stop)".into()))
+        Some(Command::Stop { pid }) => {
+            if bf::identity::current(None).provider != "human" {
+                return Err(Error::PolicyDenied(
+                    "human-only: run bf stop from your own shell".into(),
+                ));
+            }
+            println!("{}", bf::live::LiveSource::from_env().stop_recorded(pid)?);
+            Ok(())
         }
         Some(Command::Prs) => {
             let prs = bf::prs::list(&[])?;

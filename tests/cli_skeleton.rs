@@ -1,6 +1,5 @@
 //! The `bf` command surface exists end to end: every verb is listed, `doctor` works, and the
-//! not-yet-implemented verbs fail with exit code 3 and say which plan PR delivers them. The board
-//! verbs are covered in `cli_board.rs`.
+//! not-yet-implemented verbs fail with exit code 3 and say which plan PR delivers them.
 use std::process::Command;
 
 fn bf() -> Command {
@@ -58,11 +57,7 @@ fn doctor_reports_sqlite_and_pins() {
 fn unimplemented_verbs_exit_three_and_name_their_pr() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path().to_str().unwrap();
-    for args in [
-        vec!["stop", "1"],
-        vec!["prs"],
-        vec!["run", "claude", "hello"],
-    ] {
+    for args in [vec!["prs"], vec!["run", "claude", "hello"]] {
         let out = bf().args(["--data-dir", d]).args(&args).output().unwrap();
         assert_eq!(
             out.status.code(),
@@ -101,7 +96,11 @@ fn bad_input_exits_sixty_four() {
 #[test]
 fn bare_bf_without_a_tty_prints_the_plain_snapshot() {
     let dir = tempfile::tempdir().unwrap();
+    // An empty `BF_PROC`/`BF_HOME`: the host's own agents must not leak into the count.
     let out = bf()
+        .env("BF_DATA_DIR", dir.path())
+        .env("BF_HOME", dir.path())
+        .env("BF_PROC", dir.path())
         .args(["--data-dir", dir.path().to_str().unwrap()])
         .output()
         .unwrap();
