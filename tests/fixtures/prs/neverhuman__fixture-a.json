@@ -1,0 +1,39 @@
+[
+  {
+    "author": { "is_bot": false, "login": "neverhuman" },
+    "headRefName": "feat/prs-queue",
+    "headRefOid": "0123456789abcdef0123456789abcdef01234567",
+    "isDraft": false,
+    "mergeStateStatus": "CLEAN",
+    "number": 12,
+    "reviews": [
+      {
+        "author": { "login": "codex-reviewer" },
+        "body": "REVIEW: approve 0123456789abcdef0123456789abcdef01234567",
+        "state": "COMMENTED",
+        "submittedAt": "2026-09-17T10:00:00Z"
+      }
+    ],
+    "statusCheckRollup": [
+      { "__typename": "CheckRun", "conclusion": "SUCCESS", "name": "check", "status": "COMPLETED", "workflowName": "ci" },
+      { "__typename": "CheckRun", "conclusion": "SUCCESS", "name": "web", "status": "COMPLETED", "workflowName": "ci" }
+    ],
+    "title": "prs: open pull-request queue",
+    "url": "https://github.com/neverhuman/fixture-a/pull/12"
+  },
+  {
+    "author": { "is_bot": false, "login": "neverhuman" },
+    "headRefName": "wip/stop",
+    "headRefOid": "89abcdef0123456789abcdef0123456789abcdef",
+    "isDraft": true,
+    "mergeStateStatus": "DIRTY",
+    "number": 13,
+    "reviews": [],
+    "statusCheckRollup": [
+      { "__typename": "CheckRun", "conclusion": "FAILURE", "name": "check", "status": "COMPLETED", "workflowName": "ci" },
+      { "__typename": "CheckRun", "conclusion": null, "name": "web", "status": "IN_PROGRESS", "workflowName": "ci" }
+    ],
+    "title": "stop: SIGTERM then SIGKILL",
+    "url": "https://github.com/neverhuman/fixture-a/pull/13"
+  }
+]

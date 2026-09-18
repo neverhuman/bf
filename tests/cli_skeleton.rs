@@ -57,19 +57,18 @@ fn doctor_reports_sqlite_and_pins() {
 fn unimplemented_verbs_exit_three_and_name_their_pr() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path().to_str().unwrap();
-    for args in [vec!["prs"], vec!["run", "claude", "hello"]] {
-        let out = bf().args(["--data-dir", d]).args(&args).output().unwrap();
-        assert_eq!(
-            out.status.code(),
-            Some(3),
-            "{args:?}: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-        assert!(
-            String::from_utf8_lossy(&out.stderr).contains("plan PR"),
-            "{args:?}"
-        );
-    }
+    let args = ["run", "claude", "hello"];
+    let out = bf().args(["--data-dir", d]).args(args).output().unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(3),
+        "{args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("plan PR"),
+        "{args:?}"
+    );
 }
 
 #[test]
