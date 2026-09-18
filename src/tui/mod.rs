@@ -1,11 +1,13 @@
 //! The operator screen. Bare `bf` opens it: a consumer of `Source` snapshots. Nothing here
 //! mutates the farm except through `Source`, and only after an explicit confirm or typed note.
-//! Quitting restores the terminal and kills nothing. Live data arrives in plan PR 7.
+//! Quitting restores the terminal and kills nothing. Bare `bf` uses `LiveSource`.
 
+pub mod live;
 pub mod model;
 pub mod text;
 pub mod ui;
 
+pub use live::LiveSource;
 pub use model::plain;
 
 use crate::Error;

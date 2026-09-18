@@ -160,7 +160,7 @@ fn runtime() -> Result<tokio::runtime::Runtime> {
 fn dispatch(cli: Cli) -> Result<()> {
     let dir = directory(&cli);
     match cli.command {
-        None => bf::tui::run(Box::new(bf::tui::StubSource)),
+        None => bf::tui::run(Box::new(bf::tui::LiveSource::new(dir))),
         Some(Command::Agents) => {
             let agents = bf::agents::discover(&bf::agents::Env::from_env())?;
             print!("{}", bf::agents::plain_table(&agents));
