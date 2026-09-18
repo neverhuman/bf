@@ -58,7 +58,6 @@ fn unimplemented_verbs_exit_three_and_name_their_pr() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path().to_str().unwrap();
     for args in [
-        vec!["agents"],
         vec!["board"],
         vec!["claim", "src/", "-m", "x"],
         vec!["heartbeat", "c-1"],
