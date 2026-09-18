@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Fake `gh` for the test suite. `gh pr list -R <owner/name> …` prints
+# tests/fixtures/prs/<owner>__<name>.json when that file exists, else `[]`.
+# Every other invocation fails, so a test can only rely on what is canned here.
+set -euo pipefail
+if [ "${1:-}" = pr ] && [ "${2:-}" = list ] && [ "${3:-}" = -R ] && [ -n "${4:-}" ]; then
+  here="$(cd "$(dirname "$0")" && pwd)"
+  fixture="$here/../fixtures/prs/${4//\//__}.json"
+  if [ -f "$fixture" ]; then cat "$fixture"; else echo '[]'; fi
+  exit 0
+fi
+echo "fake gh: unsupported invocation: $*" >&2
+exit 1
