@@ -49,7 +49,61 @@ fn segments(path: &str) -> Vec<&str> {
 
 pub fn validate_task(value: &Value) -> Result<()> {
     require_schema_v3(value)?;
+    let known = [
+        "schema_version",
+        "id",
+        "revision",
+        "mission_id",
+        "lineage_id",
+        "repo_id",
+        "owner_id",
+        "domain_id",
+        "kind",
+        "class",
+        "title",
+        "objective",
+        "non_goals",
+        "requirement_ids",
+        "depends_on",
+        "write_paths",
+        "resource_keys",
+        "acceptance",
+        "gate_profile_id",
+        "risk",
+        "route_profile_id",
+        "grant_id",
+        "delivery_goal",
+        "limits",
+        "context_refs",
+        "stop_conditions",
+    ];
+    if value
+        .as_object()
+        .is_none_or(|o| o.keys().any(|k| !known.contains(&k.as_str())))
+    {
+        return Err(Error::InvalidContract("unknown task field".into()));
+    }
     let id = require_id(value, "id")?;
+    for key in ["title", "objective", "grant_id", "gate_profile_id"] {
+        require_id(value, key)?;
+    }
+    if !value["kind"]
+        .as_str()
+        .is_some_and(|k| matches!(k, "implementation" | "investigation"))
+    {
+        return Err(Error::InvalidContract("unknown task kind".into()));
+    }
+    if value["limits"]["write_invocations"]
+        .as_u64()
+        .is_none_or(|n| n == 0 || n > 100)
+        || value["limits"]["runtime_seconds"]
+            .as_u64()
+            .is_none_or(|n| n == 0 || n > 86400)
+    {
+        return Err(Error::InvalidContract(
+            "finite positive limits required".into(),
+        ));
+    }
     if value.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {
         return Err(Error::InvalidContract("revision must be > 0".into()));
     }
@@ -84,7 +138,18 @@ pub fn validate_task(value: &Value) -> Result<()> {
         .get("acceptance")
         .and_then(Value::as_array)
         .ok_or_else(|| Error::InvalidContract("acceptance required".into()))?;
+    if acceptance.is_empty() {
+        return Err(Error::CheckMissing(
+            "at least one acceptance criterion is required".into(),
+        ));
+    }
+    let mut ids = std::collections::HashSet::new();
     for item in acceptance {
+        let id = require_id(item, "id")?;
+        require_id(item, "statement")?;
+        if !ids.insert(id.clone()) {
+            return Err(Error::InvalidContract("duplicate acceptance ID".into()));
+        }
         let checks = item.get("check_ids").and_then(Value::as_array);
         let manual = item.get("manual_owner_id").and_then(Value::as_str);
         let has_checks = checks.map(|c| !c.is_empty()).unwrap_or(false);
@@ -186,6 +251,7 @@ mod tests {
     fn task_needs_checks() {
         let mut t = json!({
             "schema_version": 3,
+            "title":"Example", "objective":"Do it", "grant_id":"fixture", "gate_profile_id":"fixture", "limits":{"write_invocations":1,"runtime_seconds":60},
             "id": "T-x",
             "revision": 1,
             "mission_id": "M",

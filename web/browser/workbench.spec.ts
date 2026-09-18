@@ -1,0 +1,72 @@
+import {test,expect} from "@playwright/test";
+import {spawn,ChildProcess} from "node:child_process";
+import {mkdtemp,readFile,rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import path from "node:path";
+let child:ChildProcess,dir:string,url:string,token:string;
+test.beforeEach(async ({request,page})=>{
+  dir=await mkdtemp(path.join(tmpdir(),"bf-browser-"));
+  child=spawn(path.resolve("../target/debug/bf"),["--data-dir",dir,"serve","--no-open"],{cwd:dir,stdio:"ignore"});
+  let endpoint:{url:string;bootstrap:string}|undefined;
+  await expect.poll(async()=>{try{endpoint=JSON.parse(await readFile(path.join(dir,"endpoint.json"),"utf8"));return true}catch{return false}}).toBe(true);
+  url=endpoint!.url;
+  const login=await request.post(url+"/v3/bootstrap",{headers:{Authorization:`Bearer ${endpoint!.bootstrap}`},data:{}});
+  expect(login.ok()).toBeTruthy();token=(await login.json()).token;
+  await page.goto(url+"/#token="+token);
+  await expect(page.getByText("Connected",{exact:true})).toBeVisible();
+  expect(page.url()).not.toContain("token=");
+});
+test.afterEach(async()=>{if(child?.exitCode===null){child.kill("SIGTERM");await new Promise<void>(resolve=>child.once("exit",()=>resolve()));}await rm(dir,{recursive:true,force:true});});
+
+test("browser goal, Unicode edit, exact approval, draft and returning conversation",async({page,request})=>{
+  await page.getByRole("button",{name:"Try the demo"}).click();
+  await page.getByLabel("Goal",{exact:true}).fill("Reject repeated IDs — 猫\nKeep the first delivery.");
+  await page.getByRole("button",{name:"Review plan",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Start work",exact:true})).toBeEnabled();
+  await page.getByLabel("Goal",{exact:true}).fill("Reject repeated IDs — 猫\nPreserve distinct deliveries too.");
+  await page.getByRole("button",{name:"Revise plan"}).click();
+  await expect(page.getByText("Plan · revision 2",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Start work",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Start work",exact:true}).click();
+  await expect(page.getByText("Simulated draft #1",{exact:true})).toBeVisible({timeout:15000});
+  await page.reload();
+  await expect(page.getByLabel("Goal",{exact:true})).toHaveValue("Reject repeated IDs — 猫\nPreserve distinct deliveries too.");
+  await expect(page.getByText("Simulated draft #1",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Start work",exact:true})).toBeDisabled();
+  const work=await request.get(url+"/v3/work",{headers:{Authorization:`Bearer ${token}`}});
+  expect((await work.json()).items).toHaveLength(1);
+});
+test("anonymous and revoked sessions cannot read saved work",async({page,request})=>{
+  expect((await request.get(url+"/v3/work")).status()).toBe(401);
+  expect((await request.post(url+"/v3/commands",{headers:{Authorization:`Bearer ${token}`,Origin:"https://untrusted.invalid"},data:{}})).status()).toBe(403);
+  await request.delete(url+"/v3/session",{headers:{Authorization:`Bearer ${token}`}});
+  await expect(page.getByText("Disconnected",{exact:true})).toBeVisible({timeout:6000});
+  expect((await request.get(url+"/v3/work",{headers:{Authorization:`Bearer ${token}`}})).status()).toBe(401);
+});
+test("disconnect restores snapshot without another submission",async({page,context})=>{
+  await page.getByRole("button",{name:"Try the demo"}).click();
+  await page.getByRole("button",{name:"Review plan",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Start work",exact:true})).toBeEnabled();
+  await context.setOffline(true);
+  await page.getByLabel("Goal",{exact:true}).fill("Offline draft text survives");
+  await context.setOffline(false);
+  await page.reload();
+  await expect(page.getByText("Connected",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("Goal",{exact:true})).toHaveValue("Offline draft text survives");
+  await expect(page.getByRole("region",{name:"Recent goals"}).getByRole("button")).toHaveCount(1);
+});
+test("narrow screen, multiline editing, visible focus and model-free pause",async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.getByRole("button",{name:"Try the demo"}).click();
+  const editor=page.getByLabel("Goal",{exact:true});await editor.fill("line one");await editor.press("End");await editor.press("Enter");await editor.pressSequentially("line two");
+  await expect(editor).toHaveValue("line one\nline two");
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(()=>getComputedStyle(document.activeElement!).outlineStyle)).not.toBe("none");
+  await page.getByRole("button",{name:"Review plan",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Start work",exact:true})).toBeEnabled();
+  await page.getByRole("button",{name:"Pause dispatch"}).click();
+  await expect(page.getByRole("button",{name:"Resume dispatch"})).toBeVisible();
+  await page.getByRole("button",{name:"Cancel goal"}).click();
+  await expect(page.getByRole("button",{name:"Cancel goal"})).toBeDisabled();
+});
