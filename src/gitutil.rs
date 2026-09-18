@@ -34,18 +34,16 @@ pub fn git(repo: &Path, args: &[&str]) -> Result<String> {
         .map(|s| s.trim_end().to_owned())
         .map_err(|_| Error::InvalidContract("Git output is not UTF-8".into()))
 }
-pub fn init_repo(repo: &Path) -> Result<()> {
-    std::fs::create_dir_all(repo)?;
-    git(repo, &["init", "-b", "main"])?;
-    git(repo, &["config", "user.email", "fixture@bf.local"])?;
-    git(repo, &["config", "user.name", "BulletFarm fixture"])?;
-    Ok(())
-}
-pub fn commit_all(repo: &Path, message: &str) -> Result<(String, String)> {
-    git(repo, &["add", "-A"])?;
-    git(repo, &["commit", "-m", message])?;
-    Ok((
-        git(repo, &["rev-parse", "HEAD"])?,
-        git(repo, &["rev-parse", "HEAD^{tree}"])?,
-    ))
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn rev_parse_this_crate() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        assert_eq!(
+            git(root, &["rev-parse", "--is-inside-work-tree"]).unwrap(),
+            "true"
+        );
+    }
 }
