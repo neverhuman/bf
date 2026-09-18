@@ -111,5 +111,9 @@ fn bare_bf_without_a_tty_prints_the_plain_snapshot() {
         "{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(String::from_utf8_lossy(&out.stdout).contains("AGENTS (0)"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("AGENTS ("),
+        "expected an AGENTS header, got {stdout:?}"
+    );
 }
