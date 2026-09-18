@@ -1,5 +1,6 @@
 //! The `bf` command surface exists end to end: every verb is listed, `doctor` works, and the
-//! not-yet-implemented verbs fail with exit code 3 and say which plan PR delivers them.
+//! not-yet-implemented verbs fail with exit code 3 and say which plan PR delivers them. The board
+//! verbs are covered in `cli_board.rs`.
 use std::process::Command;
 
 fn bf() -> Command {
@@ -58,11 +59,6 @@ fn unimplemented_verbs_exit_three_and_name_their_pr() {
     let dir = tempfile::tempdir().unwrap();
     let d = dir.path().to_str().unwrap();
     for args in [
-        vec!["board"],
-        vec!["claim", "src/", "-m", "x"],
-        vec!["heartbeat", "c-1"],
-        vec!["release", "c-1", "-m", "done"],
-        vec!["note", "-m", "hi", "--to", "codex-1"],
         vec!["stop", "1"],
         vec!["prs"],
         vec!["run", "claude", "hello"],
