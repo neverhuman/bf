@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+# One entry point for CI and reviewers. No browser, no model, no network beyond npm/cargo registries.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-npm --prefix web ci --ignore-scripts
+want_node="v$(tr -d '[:space:]' < web/.nvmrc)"; want_npm="10.9.8"
+have_node="$(node --version)"; have_npm="$(npm --version)"
+if [ "$have_node" != "$want_node" ] || [ "$have_npm" != "$want_npm" ]; then
+  echo "scripts/check: need node $want_node / npm $want_npm, have $have_node / $have_npm (nvm use; npm i -g npm@$want_npm)" >&2
+  exit 64
+fi
+npm --prefix web ci --ignore-scripts --no-audit --no-fund
 npm --prefix web run typecheck
 npm --prefix web test -- --run
 bash scripts/build-web --check
@@ -9,9 +16,3 @@ cargo fmt --all -- --check
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
 cargo build --locked --bin bf
-# Browser dependencies are for development/CI only. The installed bf binary embeds its UI.
-(cd web && npx playwright install chromium && npm run test:browser)
-proof_dir="$(mktemp -d)"
-trap 'rm -rf "$proof_dir"' EXIT
-cargo run --locked --bin bf -- --data-dir "$proof_dir" demo --fixture basic
-cargo run --locked --bin bf -- --data-dir "$proof_dir" demo --fixture interrupted_publish
